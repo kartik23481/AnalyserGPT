@@ -210,14 +210,20 @@ if task:
                 st.markdown("### 📈 Visualizations")
                 with st.container(border=True):
                     if os.path.exists(f'{DOCKER_WORK_DIR}/output.png'):
-                        st.image(f'{DOCKER_WORK_DIR}/output.png', use_column_width=True)
+                        st.image(f'{DOCKER_WORK_DIR}/output.png', use_container_width=True)
+                        with open(f'{DOCKER_WORK_DIR}/output.png', "rb") as file:
+                            st.download_button(label="⬇️ Download Plot", data=file, file_name="insight_plot.png", mime="image/png")
                     elif os.path.exists(f'{DOCKER_WORK_DIR}/outputplot.png'):
-                        st.image(f'{DOCKER_WORK_DIR}/outputplot.png', use_column_width=True)
+                        st.image(f'{DOCKER_WORK_DIR}/outputplot.png', use_container_width=True)
+                        with open(f'{DOCKER_WORK_DIR}/outputplot.png', "rb") as file:
+                            st.download_button(label="⬇️ Download Plot", data=file, file_name="insight_plot.png", mime="image/png")
                         
                     if os.path.exists(f'{DOCKER_WORK_DIR}/output.html'):
                         with open(f'{DOCKER_WORK_DIR}/output.html', 'r', encoding='utf-8') as f:
                             html_string = f.read()
                         st.components.v1.html(html_string, height=600, scrolling=True)
+                        with open(f'{DOCKER_WORK_DIR}/output.html', "rb") as file:
+                            st.download_button(label="⬇️ Download Interactive Chart", data=file, file_name="insight_chart.html", mime="text/html")
 
         elif file is None:
             st.warning("⚠️ Action Required: Please ingest a dataset via the sidebar to proceed.")
