@@ -1,6 +1,8 @@
 import streamlit as st
 import asyncio
 import os
+import io
+import urllib.request
 from config.docker_utils import start_docker_executor, stop_docker_executor
 from config.model_client import get_model_client
 from autogen_agentchat.base import TaskResult
@@ -11,6 +13,20 @@ from config.docker_container import get_docker_executor
 
 import warnings
 warnings.filterwarnings("ignore")
+
+class SampleFile(io.BytesIO):
+    def __init__(self, name, data):
+        super().__init__(data)
+        self.name = name
+        self.size = len(data)
+    def getbuffer(self):
+        return memoryview(self.getvalue())
+
+def load_sample_data():
+    # Read the local titanic.csv file directly
+    with open("data.csv", "rb") as f:
+        data = f.read()
+    return SampleFile("data.csv", data)
 
 # --- 1. Page Configuration (Enterprise Look) ---
 st.set_page_config(
@@ -62,6 +78,16 @@ with st.sidebar:
     st.markdown("### ⚙️ Workspace Configuration")
     file = st.file_uploader("Ingest Dataset (CSV)", type=["csv"], help="Upload a clean CSV file for analysis.")
     
+    if st.button("🌊 Load Sample Data (Titanic)", use_container_width=True):
+        st.session_state.use_sample = True
+        
+    if getattr(st.session_state, 'use_sample', False) and file is None:
+        try:
+            file = load_sample_data()
+            st.success("Loaded Titanic Sample Dataset!", icon="✅")
+        except Exception as e:
+            st.error(f"Failed to load sample data: {e}")
+    
     st.divider()
     
     st.markdown("### 🔒 Security & Privacy")
@@ -99,9 +125,31 @@ if not st.session_state.messages and not st.session_state.final_insight:
         with st.container(border=True):
             st.markdown("📈 **Visualizations**")
             st.caption('"Plot an interactive scatter plot of Price vs. Rating grouped by Category."')
+            
+    st.markdown("---")
+    st.markdown("### 🚢 Try Sample Questions (Titanic Dataset)")
+    st.markdown("Clicking a question below will automatically load the Titanic dataset and run the analysis.")
+    
+    questions = [
+        "How many people survived in each class? Plot this as a bar chart.",
+        "What is the average age of passengers who survived vs died?",
+        "Create a correlation heatmap of all numerical features.",
+        "Find the passenger with the highest fare and tell me their details.",
+        "Did passenger class have a significant impact on survival rate? Show me the data."
+    ]
+    
+    for q in questions:
+        if st.button(q, use_container_width=True):
+            st.session_state.use_sample = True
+            st.session_state.sample_task = q
+            st.rerun()
 
 # --- 6. Chat Input ---
 task = st.chat_input("Enter your analytical objective... (e.g., 'Identify the key drivers of churn')")
+
+if getattr(st.session_state, "sample_task", None):
+    task = st.session_state.sample_task
+    st.session_state.sample_task = None
 
 # --- 7. Agent Team Function (Core Logic Intact) ---
 async def run_agent_team(docker, model_client, task, file_bytes=None, filename=None):
@@ -191,7 +239,8 @@ if task:
             docker = get_docker_executor() 
 
             file_bytes = file.getbuffer().tobytes()
-            filename = file.name
+            # Force the filename to 'data.csv' in the sandbox so the agent always finds it
+            filename = "data.csv"
 
             # Run the agent team
             asyncio.run(run_agent_team(docker, openai_model_client, task, file_bytes=file_bytes, filename=filename))
