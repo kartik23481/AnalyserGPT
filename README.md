@@ -70,5 +70,4 @@ If you want to run Insight AI on your local machine:
 ## 🛡️ Privacy & Security
 Insight AI utilizes E2B's secure cloud sandboxes. When you upload a dataset, it is securely transferred to an isolated Docker container for the duration of your session. Once the analysis is complete or the session is closed, the sandbox and all associated data are permanently destroyed.
 
-## 👨‍💻 Developers
-Built with ❤️ by Kartik & Harshil.
+
